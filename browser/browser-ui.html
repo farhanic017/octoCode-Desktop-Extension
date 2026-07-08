@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:#111;color:#fff;height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none}
+.drag-space{height:14px;background:#111;-webkit-app-region:drag;flex-shrink:0;cursor:grab}
+.titlebar{display:flex;align-items:center;background:#111;border-bottom:1px solid #222;-webkit-app-region:drag;flex-shrink:0;height:36px;padding:0 6px;gap:6px}
+.search-bar{flex:1;display:flex;align-items:center;gap:6px;background:#1e1e1e;border:1px solid #333;border-radius:18px;padding:0 10px;-webkit-app-region:no-drag;height:26px}
+.search-bar:focus-within{border-color:#4a9eff}
+.reload-btn{width:20px;height:20px;border:none;background:transparent;color:#888;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0}
+.reload-btn:hover{color:#fff}
+.reload-btn svg{width:14px;height:14px;fill:currentColor}
+.search-bar input{flex:1;background:transparent;border:none;color:#fff;font-size:12px;outline:none}
+.search-bar input::placeholder{color:#666}
+.win-btns{display:flex;-webkit-app-region:no-drag;position:relative;flex-shrink:0}
+.win-btns button{width:40px;height:36px;border:none;background:transparent;color:#888;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.win-btns button:hover{background:#ffffff12;color:#fff}
+.win-btns button.close:hover{background:#e74c3c}
+.win-btns button svg{width:14px;height:14px}
+.device-dropdown{position:absolute;top:50px;right:0;width:370px;max-height:75vh;background:#fff;border:1px solid #e0e0e0;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.25);z-index:1000;display:none;overflow-y:auto;overflow-x:hidden}
+.device-dropdown.show{display:block}
+.device-dropdown::-webkit-scrollbar{width:6px}
+.device-dropdown::-webkit-scrollbar-track{background:transparent}
+.device-dropdown::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+.device-dropdown-header{padding:14px 14px 8px;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #eee}
+.device-dropdown-section{padding:10px 10px 2px}
+.device-dropdown-section-title{padding:4px 2px;font-size:12px;color:#333;font-weight:700;margin-bottom:4px}
+.device-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:4px 0 8px}
+.device-option{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px 6px;border-radius:6px;cursor:pointer;transition:all .15s;border:2px solid transparent;position:relative}
+.device-option:hover{background:#f5f5f5}
+.device-option.active{background:#f0f7ff;border-color:#4a9eff}
+.phone-preview{width:18px;height:32px;border:2px solid #bbb;border-radius:4px}
+.device-option.active .phone-preview{border-color:#4a9eff}
+.phone-preview::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:6px;height:1px;background:#bbb;border-radius:1px}
+.device-option.active .phone-preview::after{background:#4a9eff}
+.tablet-preview{width:24px;height:18px;border:2px solid #bbb;border-radius:2px}
+.device-option.active .tablet-preview{border-color:#4a9eff}
+.desktop-preview{width:26px;height:18px;border:2px solid #bbb;border-radius:2px;position:relative}
+.desktop-preview::after{content:'';position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:14px;height:3px;background:#bbb;border-radius:1px}
+.device-option.active .desktop-preview{border-color:#4a9eff}
+.device-option.active .desktop-preview::after{background:#4a9eff}
+.watch-preview{width:20px;height:24px;border:2px solid #bbb;border-radius:6px;position:relative}
+.watch-preview::before{content:'';position:absolute;top:-4px;left:50%;transform:translateX(-50%);width:10px;height:4px;background:#bbb;border-radius:2px}
+.watch-preview::after{content:'';position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);width:10px;height:4px;background:#bbb;border-radius:2px}
+.device-option.active .watch-preview{border-color:#4a9eff}
+.device-option.active .watch-preview::before,.device-option.active .watch-preview::after{background:#4a9eff}
+.label{font-size:9px;color:#555;text-align:center;line-height:1.15}
+.device-option.active .label{color:#4a9eff;font-weight:600}
+.pro-badge{font-size:7px;color:#fff;background:#4a9eff;border-radius:3px;padding:1px 3px;font-weight:700;position:absolute;top:1px;right:1px;line-height:1}
+.new-badge{font-size:7px;color:#fff;background:#4caf50;border-radius:3px;padding:1px 3px;font-weight:700;position:absolute;top:1px;right:1px;line-height:1}
+.content{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#0a0a0a}
+#mockup-wrap{position:relative;display:inline-block;overflow:hidden}
+#mockup-wrap iframe{position:absolute;border:none;background:#fff}
+#mockup-wrap img{position:absolute;top:0;left:0;pointer-events:none;width:100%;height:100%}
+</style>
+</head>
+<body>
+<div class="drag-space"></div>
+<div class="titlebar">
+<div class="search-bar"><button class="reload-btn" onclick="reloadPage()" title="Reload"><svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button><input id="url-input" type="text" placeholder="Enter URL or search..."/></div>
+<div class="win-btns"><button onclick="toggleDropdown()" title="Devices"><svg viewBox="0 0 24 24" width="14" height="14"><rect x="4" y="6" width="13" height="13" rx="1" fill="none" stroke="#888" stroke-width="1.2"/><rect x="7" y="3" width="13" height="13" rx="1" fill="#4a9eff"/></svg></button><button class="close" onclick="closeWindow()" title="Close"><svg viewBox="0 0 24 24"><path fill="white" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button></div>
+<div class="device-dropdown" id="device-dropdown">
+<div class="device-dropdown-header">VISIBLE DEVICES IN THE TAB</div>
+<div class="device-dropdown-section"><div class="device-dropdown-section-title">Desktop</div><div class="device-grid"><div class="device-option active" data-device="desktop" onclick="selectDevice('desktop')"><div class="desktop-preview"></div><div class="label">Desktop</div></div></div></div>
+<div class="device-dropdown-section"><div class="device-dropdown-section-title">Apple Phones</div><div class="device-grid" id="apple-phones-grid"></div></div>
+<div class="device-dropdown-section"><div class="device-dropdown-section-title">Android Phones</div><div class="device-grid" id="android-phones-grid"></div></div>
+<div class="device-dropdown-section"><div class="device-dropdown-section-title">Tablets</div><div class="device-grid" id="tablets-grid"></div></div>
+<div class="device-dropdown-section"><div class="device-dropdown-section-title">Wearables</div><div class="device-grid" id="wearables-grid"></div></div>
+<div class="device-dropdown-section"><div class="device-dropdown-section-title">Laptops</div><div class="device-grid" id="macbooks-grid"></div></div>
+</div></div>
+<div class="content"><div id="mockup-wrap" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;"><iframe id="mf" src="about:blank" style="width:100%;height:100%;border:none;position:static;"></iframe></div></div>
+<script>
+const urlInput=document.getElementById('url-input'),dropdown=document.getElementById('device-dropdown'),mw=document.getElementById('mockup-wrap');
+let curDev='desktop';
+window.prevUrl='about:blank';
+const getUrl=function(){return window.prevUrl||'about:blank'};
+const assets='device-assets/';
+// Config: pngW, pngH = PNG image dimensions, sx, sy = screen start in PNG, sw, sh = screen size in PNG
+const devicesConfig=[
+{slug:'apple-iphone-17-pro-max-2025',pngW:963,pngH:1978,sx:3,sy:1,sw:960,sh:1977,pro:true},
+{slug:'apple-iphone-17-pro-2025',pngW:878,pngH:1806,sx:1,sy:0,sw:877,sh:1806,pro:true},
+{slug:'apple-iphone-air-2025',pngW:912,pngH:1882,sx:0,sy:2,sw:912,sh:1880,pro:true},
+{slug:'apple-iphone-17-2025',pngW:877,pngH:1808,sx:3,sy:1,sw:873,sh:1806,pro:true},
+{slug:'apple-iphone-16-pro-max-2024',pngW:962,pngH:1982,sx:3,sy:2,sw:958,sh:1980,pro:true},
+{slug:'apple-iphone-16-pro-2024',pngW:1536,pngH:1024,sx:571,sy:82,sw:393,sh:836,pro:true},
+{slug:'apple-iphone-16-plus-2024',pngW:961,pngH:1954,sx:0,sy:0,sw:961,sh:1953,pro:true},
+{slug:'apple-iphone-16-2024',pngW:878,pngH:1786,sx:0,sy:0,sw:878,sh:1785,pro:true},
+{slug:'apple-iphone-15-pro-max-2023',pngW:938,pngH:1926,sx:1,sy:1,sw:936,sh:1925,pro:true},
+{slug:'apple-iphone-15-pro-2023',pngW:864,pngH:1768,sx:1,sy:0,sw:863,sh:1767,pro:true},
+{slug:'apple-iphone-15-plus-2023',pngW:950,pngH:1936,sx:0,sy:0,sw:950,sh:1936,pro:true},
+{slug:'apple-iphone-15-2023',pngW:868,pngH:1772,sx:0,sy:0,sw:868,sh:1772,pro:true},
+{slug:'apple-iphone-14-pro-max-2022',pngW:956,pngH:1946,sx:1,sy:3,sw:955,sh:1942},
+{slug:'apple-iphone-14-pro-2022',pngW:870,pngH:1772,sx:0,sy:3,sw:870,sh:1767},
+{slug:'apple-iphone-14-max-2022',pngW:956,pngH:1936,sx:2,sy:1,sw:954,sh:1934},
+{slug:'apple-iphone-14-2022',pngW:870,pngH:1772,sx:1,sy:1,sw:869,sh:1765},
+{slug:'apple-iphone-13-pro-max-2021',pngW:966,pngH:1948,sx:0,sy:2,sw:965,sh:1944},
+{slug:'apple-iphone-13-pro-2021',pngW:868,pngH:1762,sx:0,sy:0,sw:868,sh:1762},
+{slug:'apple-iphone-13-mini-2021',pngW:844,pngH:1702,sx:1,sy:0,sw:842,sh:1702},
+{slug:'apple-iphone-13-2021',pngW:882,pngH:1776,sx:2,sy:2,sw:878,sh:1773},
+{slug:'apple-iphone-12-pro-max',pngW:956,pngH:1936,sx:0,sy:0,sw:956,sh:1935},
+{slug:'apple-iphone-12-pro',pngW:876,pngH:1772,sx:0,sy:0,sw:876,sh:1772},
+{slug:'apple-iphone-12-mini',pngW:814,pngH:1640,sx:0,sy:0,sw:813,sh:1640},
+{slug:'apple-iphone-12',pngW:876,pngH:1772,sx:0,sy:0,sw:876,sh:1772},
+{slug:'apple-iphone-11-pro-max',pngW:942,pngH:1896,sx:1,sy:1,sw:941,sh:1895},
+{slug:'apple-iphone-11-pro',pngW:866,pngH:1750,sx:1,sy:0,sw:864,sh:1741},
+{slug:'apple-iphone-11',pngW:980,pngH:1936,sx:0,sy:1,sw:979,sh:1934},
+{slug:'samsung-galaxy-s26-ultra-2026',pngW:882,pngH:1832,sx:1,sy:0,sw:879,sh:1831,pro:true},
+{slug:'samsung-galaxy-s24-ultra-2024',pngW:844,pngH:1728,sx:0,sy:0,sw:844,sh:1728,pro:true},
+{slug:'samsung-galaxy-s24-2024',pngW:780,pngH:1614,sx:1,sy:1,sw:779,sh:1613,pro:true},
+{slug:'samsung-galaxy-s22-ultra-2022',pngW:742,pngH:1568,sx:0,sy:0,sw:742,sh:1568},
+{slug:'samsung-galaxy-s22-plus-2022',pngW:786,pngH:1622,sx:0,sy:0,sw:785,sh:1622},
+{slug:'samsung-galaxy-s22-2022',pngW:786,pngH:1622,sx:0,sy:0,sw:785,sh:1622},
+{slug:'samsung-galaxy-s21-ultra',pngW:764,pngH:1658,sx:0,sy:0,sw:764,sh:1658},
+{slug:'samsung-galaxy-s20',pngW:768,pngH:1668,sx:0,sy:1,sw:768,sh:1667},
+{slug:'samsung-galaxy-a17-2025',pngW:918,pngH:1912,sx:1,sy:0,sw:917,sh:1912},
+{slug:'samsung-galaxy-a12-2021',pngW:794,pngH:1718,sx:0,sy:0,sw:794,sh:1718},
+{slug:'samsung-galaxy-z-flip3-2021',pngW:828,pngH:1858,sx:0,sy:0,sw:824,sh:1858},
+{slug:'samsung-galaxy-fold2',pngW:1842,pngH:2284,sx:0,sy:0,sw:1842,sh:2283},
+{slug:'samsung-galaxy-note20-ultra',pngW:846,pngH:1826,sx:0,sy:0,sw:846,sh:1826},
+{slug:'google-pixel-10-2026',pngW:918,pngH:1938,sx:0,sy:1,sw:918,sh:1937},
+{slug:'google-pixel-10-pro-2026',pngW:900,pngH:1894,sx:0,sy:0,sw:900,sh:1894},
+{slug:'google-pixel-10-pro-fold-2026',pngW:940,pngH:1902,sx:0,sy:0,sw:939,sh:1902},
+{slug:'google-pixel-8-2024',pngW:912,pngH:1920,sx:1,sy:0,sw:910,sh:1920},
+{slug:'google-pixel-6-pro',pngW:762,pngH:1656,sx:0,sy:0,sw:762,sh:1644},
+{slug:'google-pixel-5',pngW:876,pngH:1786,sx:1,sy:0,sw:875,sh:1786},
+{slug:'oneplus-nord-2',pngW:898,pngH:1944,sx:0,sy:1,sw:898,sh:1943},
+{slug:'xiaomi-12-2022',pngW:770,pngH:1670,sx:0,sy:0,sw:770,sh:1670},
+{slug:'xiaomi-mi-11i',pngW:792,pngH:1684,sx:0,sy:0,sw:790,sh:1684},
+{slug:'oppo-find-x3-pro',pngW:760,pngH:1690,sx:0,sy:0,sw:760,sh:1690},
+{slug:'infinix-hot-70-2026',pngW:796,pngH:1680,sx:0,sy:0,sw:796,sh:1680},
+{slug:'motorola-razr-70-ultra-2026',pngW:936,pngH:2130,sx:1,sy:1,sw:933,sh:2127},
+{slug:'apple-ipad-pro-11-2018',pngW:1864,pngH:2582,sx:1,sy:1,sw:1862,sh:2581},
+{slug:'apple-ipad-air-4',pngW:1864,pngH:2584,sx:0,sy:0,sw:1864,sh:2584},
+{slug:'apple-ipad-mini',pngW:1728,pngH:2608,sx:1,sy:1,sw:1726,sh:2607},
+{slug:'samsung-galaxy-tab-s7',pngW:1790,pngH:2744,sx:0,sy:0,sw:1789,sh:2744},
+{slug:'apple-watch-serie-6',pngW:450,pngH:776,sx:0,sy:0,sw:449,sh:775},
+{slug:'apple-watch-ultra-2',pngW:1536,pngH:1024,sx:616,sy:284,sw:290,sh:455,pro:true},
+{slug:'apple-watch-series-10',pngW:1264,pngH:843,sx:406,sy:44,sw:437,sh:736,pro:true},
+{slug:'macbook-air',pngW:3296,pngH:1894,sx:0,sy:0,sw:3296,sh:1894},
+{slug:'apple-macbook-pro-16-2021',pngW:4244,pngH:2594,sx:3,sy:3,sw:4236,sh:2585},
+{slug:'dell-latitude-14-3420',pngW:3574,pngH:2450,sx:0,sy:0,sw:3574,sh:2450},
+{slug:'samsung-smart-tv',pngW:3882,pngH:2418,sx:0,sy:0,sw:3882,sh:2418}
+];
+const applePhones=[
+{id:'iphone-17-pro-max',n:'iPhone 17\nPro Max'},{id:'iphone-17-pro',n:'iPhone 17\nPro'},
+{id:'iphone-17-air',n:'iPhone 17\nAir'},{id:'iphone-17',n:'iPhone 17'},
+{id:'iphone-16-pro-max',n:'iPhone 16\nPro Max'},{id:'iphone-16-pro',n:'iPhone 16\nPro'},
+{id:'iphone-16-plus',n:'iPhone 16\nPlus'},{id:'iphone-16',n:'iPhone 16'},
+{id:'iphone-15-pro-max',n:'iPhone 15\nPro Max'},{id:'iphone-15-pro',n:'iPhone 15\nPro'},
+{id:'iphone-15-plus',n:'iPhone 15\nPlus'},{id:'iphone-15',n:'iPhone 15'},
+{id:'iphone-14-pro-max',n:'iPhone 14\nPro Max'},{id:'iphone-14-pro',n:'iPhone 14\nPro'},
+{id:'iphone-14-plus',n:'iPhone 14\nPlus'},{id:'iphone-14',n:'iPhone 14'},
+{id:'iphone-13-pro-max',n:'iPhone 13\nPro Max'},{id:'iphone-13-pro',n:'iPhone 13\nPro'},
+{id:'iphone-13-mini',n:'iPhone 13\nMini'},{id:'iphone-13',n:'iPhone 13'},
+{id:'iphone-12-pro-max',n:'iPhone 12\nPro Max'},{id:'iphone-12-pro',n:'iPhone 12\nPro'},
+{id:'iphone-12-mini',n:'iPhone 12\nMini'},{id:'iphone-12',n:'iPhone 12'},
+{id:'iphone-11-pro-max',n:'iPhone 11\nPro Max'},{id:'iphone-11-pro',n:'iPhone 11\nPro'},
+{id:'iphone-11',n:'iPhone 11'},
+];
+const androidPhones=[
+{id:'galaxy-s26-ultra',n:'Galaxy S26\nUltra'},{id:'galaxy-s24-ultra',n:'Galaxy S24\nUltra'},
+{id:'galaxy-s24',n:'Galaxy S24'},{id:'galaxy-s22-ultra',n:'Galaxy S22\nUltra'},
+{id:'galaxy-s22-plus',n:'Galaxy S22\nPlus'},{id:'galaxy-s22',n:'Galaxy S22'},
+{id:'galaxy-s21-ultra',n:'Galaxy S21\nUltra'},{id:'galaxy-s20',n:'Galaxy S20'},
+{id:'galaxy-a17',n:'Galaxy A17'},{id:'galaxy-a12',n:'Galaxy A12'},
+{id:'galaxy-z-flip3',n:'Galaxy Z\nFlip 3'},{id:'galaxy-z-fold2',n:'Galaxy Z\nFold 2'},
+{id:'galaxy-note20-ultra',n:'Galaxy Note\n20 Ultra'},
+{id:'pixel-10',n:'Pixel 10'},{id:'pixel-10-pro',n:'Pixel 10\nPro'},
+{id:'pixel-10-pro-fold',n:'Pixel 10\nPro Fold'},
+{id:'pixel-8',n:'Pixel 8'},{id:'pixel-6-pro',n:'Pixel 6\nPro'},{id:'pixel-5',n:'Pixel 5'},
+{id:'oneplus-nord-2',n:'OnePlus\nNord 2'},
+{id:'xiaomi-12',n:'Xiaomi 12'},{id:'xiaomi-11i',n:'Xiaomi\nMi 11i'},
+{id:'oppo-find-x3',n:'OPPO Find\nX3 Pro'},
+{id:'infinix-hot-70',n:'Infinix\nHot 70'},{id:'motorola-razr-70',n:'Motorola\nRazr 70'},
+];
+const tablets=[
+{id:'ipad-pro-11',n:'iPad Pro\n11"'},{id:'ipad-air',n:'iPad Air'},
+{id:'ipad-mini',n:'iPad Mini'},
+{id:'galaxy-tab-s7',n:'Galaxy Tab\nS7'},
+];
+const wearables=[
+{id:'apple-watch',n:'Watch\nSeries 6'},{id:'apple-watch-ultra-2',n:'Watch\nUltra 2'},
+{id:'apple-watch-series-10',n:'Watch\nSeries 7'},
+];
+const macbooks=[
+{id:'macbook-air',n:'MacBook\nAir'},{id:'macbook-pro-16',n:'MBP 16" 2021'},
+{id:'dell-latitude',n:'Dell\nLatitude'},
+];
+const deviceMap={
+'iphone-17-pro-max':'apple-iphone-17-pro-max-2025','iphone-17-pro':'apple-iphone-17-pro-2025',
+'iphone-17-air':'apple-iphone-air-2025','iphone-17':'apple-iphone-17-2025',
+'iphone-16-pro-max':'apple-iphone-16-pro-max-2024','iphone-16-pro':'apple-iphone-16-pro-2024',
+'iphone-16-plus':'apple-iphone-16-plus-2024','iphone-16':'apple-iphone-16-2024',
+'iphone-15-pro-max':'apple-iphone-15-pro-max-2023','iphone-15-pro':'apple-iphone-15-pro-2023',
+'iphone-15-plus':'apple-iphone-15-plus-2023','iphone-15':'apple-iphone-15-2023',
+'iphone-14-pro-max':'apple-iphone-14-pro-max-2022','iphone-14-pro':'apple-iphone-14-pro-2022',
+'iphone-14-plus':'apple-iphone-14-max-2022','iphone-14':'apple-iphone-14-2022',
+'iphone-13-pro-max':'apple-iphone-13-pro-max-2021','iphone-13-pro':'apple-iphone-13-pro-2021',
+'iphone-13-mini':'apple-iphone-13-mini-2021','iphone-13':'apple-iphone-13-2021',
+'iphone-12-pro-max':'apple-iphone-12-pro-max','iphone-12-pro':'apple-iphone-12-pro',
+'iphone-12-mini':'apple-iphone-12-mini','iphone-12':'apple-iphone-12',
+'iphone-11-pro-max':'apple-iphone-11-pro-max','iphone-11-pro':'apple-iphone-11-pro',
+'iphone-11':'apple-iphone-11',
+'galaxy-s26-ultra':'samsung-galaxy-s26-ultra-2026','galaxy-s24-ultra':'samsung-galaxy-s24-ultra-2024',
+'galaxy-s24':'samsung-galaxy-s24-2024','galaxy-s22-ultra':'samsung-galaxy-s22-ultra-2022',
+'galaxy-s22-plus':'samsung-galaxy-s22-plus-2022','galaxy-s22':'samsung-galaxy-s22-2022',
+'galaxy-s21-ultra':'samsung-galaxy-s21-ultra','galaxy-s20':'samsung-galaxy-s20',
+'galaxy-a17':'samsung-galaxy-a17-2025','galaxy-a12':'samsung-galaxy-a12-2021',
+'galaxy-z-flip3':'samsung-galaxy-z-flip3-2021','galaxy-z-fold2':'samsung-galaxy-fold2',
+'galaxy-note20-ultra':'samsung-galaxy-note20-ultra',
+'pixel-10':'google-pixel-10-2026','pixel-10-pro':'google-pixel-10-pro-2026',
+'pixel-10-pro-fold':'google-pixel-10-pro-fold-2026','pixel-8':'google-pixel-8-2024',
+'pixel-6-pro':'google-pixel-6-pro','pixel-5':'google-pixel-5',
+'oneplus-nord-2':'oneplus-nord-2','xiaomi-12':'xiaomi-12-2022',
+'xiaomi-11i':'xiaomi-mi-11i','oppo-find-x3':'oppo-find-x3-pro',
+'infinix-hot-70':'infinix-hot-70-2026','motorola-razr-70':'motorola-razr-70-ultra-2026',
+'ipad-pro-11':'apple-ipad-pro-11-2018','ipad-air':'apple-ipad-air-4',
+'ipad-mini':'apple-ipad-mini','galaxy-tab-s7':'samsung-galaxy-tab-s7',
+'apple-watch':'apple-watch-serie-6','apple-watch-ultra-2':'apple-watch-ultra-2',
+'apple-watch-series-10':'apple-watch-series-10',
+'macbook-air':'macbook-air','macbook-pro-16':'apple-macbook-pro-16-2021',
+'dell-latitude':'dell-latitude-14-3420','samsung-tv':'samsung-smart-tv',
+};
+function bld(l,g,t){const gr=document.getElementById(g);l.forEach(d=>{
+const slug=deviceMap[d.id]||d.id;const cfg=devicesConfig.find(c=>c.slug===slug);
+let b=cfg&&cfg.pro?'<span class="pro-badge">PRO</span>':'';
+const e=document.createElement('div');e.className='device-option';e.setAttribute('data-device',d.id);e.onclick=()=>selectDevice(d.id);
+e.innerHTML=b+'<div class="'+t+'-preview"></div><div class="label">'+d.n.replace(/\n/g,'<br>')+'</div>';gr.appendChild(e)});}
+bld(applePhones,'apple-phones-grid','phone');bld(androidPhones,'android-phones-grid','phone');
+bld(tablets,'tablets-grid','tablet');bld(wearables,'wearables-grid','watch');
+bld(macbooks,'macbooks-grid','desktop');
+function toggleDropdown(){dropdown.classList.toggle('show')}
+document.addEventListener('click',e=>{if(!e.target.closest('.win-btns')&&!e.target.closest('.device-dropdown'))dropdown.classList.remove('show')});
+function selectDevice(id){curDev=id;document.querySelectorAll('.device-option').forEach(o=>o.classList.remove('active'));document.querySelector('[data-device="'+id+'"]')?.classList.add('active');dropdown.classList.remove('show');applyDevice()}
+function applyDevice(){
+const slug=deviceMap[curDev];const cfg=devicesConfig.find(c=>c.slug===slug);
+if(!slug||!cfg){mw.style.cssText='width:100%;height:100%;display:flex;align-items:center;justify-content:center;';mw.innerHTML='<iframe id="mf" src="'+getUrl()+'" style="width:100%;height:100%;border:none;"></iframe>';return;}
+const ip=assets+slug+'/device.png';
+const area=mw.parentElement.getBoundingClientRect();
+const s=Math.min((area.width-40)/cfg.pngW,(area.height-40)/cfg.pngH,1);
+const cw=Math.round(cfg.pngW*s),ch=Math.round(cfg.pngH*s);
+const ix=Math.round(cfg.sx*s),iy=Math.round(cfg.sy*s);
+const fw=Math.round(cfg.sw*s),fh=Math.round(cfg.sh*s);
+mw.style.cssText='position:relative;width:'+cw+'px;height:'+ch+'px;flex-shrink:0;';
+mw.innerHTML='<iframe id="mf" src="'+getUrl()+'" style="position:absolute;left:'+ix+'px;top:'+iy+'px;width:'+fw+'px;height:'+fh+'px;border:none;background:#fff;z-index:1;"></iframe><img src="'+ip+'" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;"/>';
+}
+function reloadPage(){const f=document.getElementById('mf');if(f)f.src=f.src}
+urlInput.addEventListener('keydown',e=>{if(e.key==='Enter'){let u=urlInput.value.trim();if(!u.startsWith('http'))u='https://'+u;window.prevUrl=u;const f=document.getElementById('mf');if(f)f.src=u}});
+function closeWindow(){window.close()}
+window.setDevice=id=>selectDevice(id);
+</script>
+</body>
+</html>

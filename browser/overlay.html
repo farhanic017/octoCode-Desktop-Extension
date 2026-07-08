@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html><head><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#111;height:100vh;display:flex;flex-direction:column;overflow:hidden;font-family:system-ui,-apple-system,sans-serif}
+.top-bar{height:52px;background:#111;border-bottom:1px solid #222;display:flex;align-items:center;padding:0 8px;gap:6px;-webkit-app-region:drag;flex-shrink:0}
+.btn{width:30px;height:30px;border:none;background:transparent;color:#888;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-app-region:no-drag;border-radius:4px;flex-shrink:0}
+.btn:hover{background:rgba(255,255,255,.08);color:#fff}
+.btn.close:hover{background:#e74c3c}
+.btn svg{width:14px;height:14px}
+.url-bar{flex:1;height:26px;background:#1e1e1e;border:1px solid #333;border-radius:14px;padding:0 12px;color:#fff;font-size:12px;border:none;outline:none;-webkit-app-region:no-drag}
+.url-bar:focus{border-color:#4a9eff}
+.content{flex:1;position:relative}
+</style></head><body>
+<div class="top-bar">
+  <button class="btn" onclick="goBack()"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+  <button class="btn" onclick="goForward()"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg></button>
+  <button class="btn" onclick="reloadPage()"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
+  <input class="url-bar" id="url-bar" value="%%URL%%" onkeydown="if(event.key==='Enter')navigate(this.value)"/>
+  <button class="btn" id="dev-btn" onclick="cycleDevice()" title="Cycle Device"><svg viewBox="0 0 24 24" width="14" height="14"><rect x="4" y="6" width="13" height="13" rx="1" fill="none" stroke="#888" stroke-width="1.2"/><rect x="7" y="3" width="13" height="13" rx="1" fill="#4a9eff"/></svg></button>
+  <button class="btn close" onclick="window.close()"><svg viewBox="0 0 24 24"><path fill="white" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+</div>
+<div class="content"><iframe id="site-frame" src="%%URL%%" style="width:100%;height:100%;border:none;background:#fff"></iframe></div>
+<script>
+var tabW=%%TAB_W%%,tabH=%%TAB_H%%;
+var state=0;
+var portraitW=440,portraitH=956;
+
+function cycleDevice(){
+  state=(state+1)%3;
+  if(state===0){window.electronAPI.resize(tabW,tabH)}
+  else if(state===1){window.electronAPI.resize(portraitW,portraitH)}
+  else{window.electronAPI.maximize()}
+}
+
+function navigate(u){if(u.indexOf('http')!==0)u='https://'+u;document.getElementById('site-frame').src=u;document.getElementById('url-bar').value=u}
+function goBack(){try{document.getElementById('site-frame').contentWindow.history.back()}catch(e){}}
+function goForward(){try{document.getElementById('site-frame').contentWindow.history.forward()}catch(e){}}
+function reloadPage(){document.getElementById('site-frame').src=document.getElementById('site-frame').src}
+</script>
+</body></html>

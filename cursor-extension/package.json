@@ -1,0 +1,42 @@
+{
+  "name": "octocode-desktop",
+  "displayName": "OctoCode Desktop Automation",
+  "description": "Desktop & browser automation tools for OctoCode agents",
+  "version": "1.0.0",
+  "publisher": "farhan-dhrubo",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Automation", "Other"],
+  "activationEvents": ["onCommand:octocode.startPreview"],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "octocode.startPreview", "title": "OctoCode: Start Live Preview" },
+      { "command": "octocode.stopPreview", "title": "OctoCode: Stop Live Preview" },
+      { "command": "octocode.screenshot", "title": "OctoCode: Take Screenshot" },
+      { "command": "octocode.desktopScreenshot", "title": "OctoCode: Desktop Screenshot" },
+      { "command": "octocode.clipboard", "title": "OctoCode: Clipboard (Get/Set)" },
+      { "command": "octocode.windowList", "title": "OctoCode: List Windows" },
+      { "command": "octocode.openApp", "title": "OctoCode: Open Application" },
+      { "command": "octocode.mouseClick", "title": "OctoCode: Mouse Click" },
+      { "command": "octocode.typeText", "title": "OctoCode: Type Text" }
+    ],
+    "menus": {
+      "commandPalette": [
+        { "command": "octocode.startPreview" },
+        { "command": "octocode.stopPreview" },
+        { "command": "octocode.screenshot" },
+        { "command": "octocode.desktopScreenshot" },
+        { "command": "octocode.clipboard" },
+        { "command": "octocode.windowList" },
+        { "command": "octocode.openApp" },
+        { "command": "octocode.mouseClick" },
+        { "command": "octocode.typeText" }
+      ],
+      "editor/context": [
+        { "command": "octocode.startPreview", "when": "resourceExtname == .html || resourceExtname == .tsx || resourceExtname == .jsx" }
+      ]
+    }
+  }
+}
